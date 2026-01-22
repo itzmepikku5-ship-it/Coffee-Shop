@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ITS COFFEE TIME - Premium Coffee Shop</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --coffee-dark: #1A120B;
+            --coffee-brown: #3C2A21;
+            --coffee-darker: #261C13;
+            --coffee-light: #D5CEA3;
+            --coffee-cream: #E5E5CB;
+            --coffee-gold: #D4A574;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--coffee-dark);
+            color: var(--coffee-cream);
+            overflow-x: hidden;
+        }
+
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Custom utility classes */
+        .bg-coffee-dark { background-color: #1A120B; }
+        .bg-coffee-brown { background-color: #3C2A21; }
+        .bg-coffee-darker { background-color: #261C13; }
+        .bg-coffee-cream { background-color: #E5E5CB; }
+        .bg-coffee-gold { background-color: #D4A574; }
+
+        .text-coffee-dark { color: #1A120B; }
+        .text-coffee-brown { color: #3C2A21; }
+        .text-coffee-light { color: #D5CEA3; }
+        .text-coffee-cream { color: #E5E5CB; }
+        .text-coffee-gold { color: #D4A574; }
+
+        .border-coffee-brown { border-color: #3C2A21; }
+        .border-coffee-gold { border-color: #D4A574; }
+
+        /* Input focus styles */
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #D4A574;
+            box-shadow: 0 0 0 2px rgba(212, 165, 116, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // ============================================
+        // ITS COFFEE TIME - FIXED VERSION
+        // No clicking needed for each character!
+        // ============================================
+
+        const { useState, useEffect, useRef } = React;
+
+        // Format price in Indian Rupees
+        const formatPrice = (price) => {
+            return `₹${price}`;
+        };
+
+        // Main App Component - SIMPLIFIED TO PREVENT RE-RENDERS
+        const App = () => {
+            // State Management - Moved to refs where possible
+            const [currentPage, setCurrentPage] = useState('home');
+            const [cart, setCart] = useState([]);
+            const [showMobileMenu, setShowMobileMenu] = useState(false);
+            const [orderConfirmed, setOrderConfirmed] = useState(false);
+            
+            // Use refs for form data to prevent re-renders
+            const bookingFormRef = useRef({
+                date: '',
+                time: '',
+                people: 2,
+                name: '',
+                email: '',
+                phone: ''
+            });
+            
+            const searchTermRef = useRef('');
+            const sortByRef = useRef('default');
+            const categoryFilterRef = useRef('all');
+
+            // Mock Coffee Data
+            const coffees = [
+                { id: 1, name: "Espresso", price: 150, rating: 4.8, category: "hot", 
+                  image: "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=400&h=300&fit=crop", 
+                  description: "Strong and bold Italian classic" },
+                
+                { id: 2, name: "Cappuccino", price: 180, rating: 4.7, category: "hot", 
+                  image: "https://images.unsplash.com/photo-1534778101976-62847782c213?w=400&h=300&fit=crop", 
+                  description: "Perfect balance of espresso, milk, and foam" },
+                
+                { id: 3, name: "Iced Latte", price: 190, rating: 4.6, category: "cold", 
+                  image: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400&h=300&fit=crop", 
+                  description: "Refreshing cold coffee with milk" },
+                
+                { id: 4, name: "Cold Brew", price: 170, rating: 4.9, category: "cold", 
+                  image: "https://images.unsplash.com/photo-1553909489-cd47e0907980?w=400&h=300&fit=crop", 
+                  description: "Smooth 12-hour steeped coffee" },
+                
+                { id: 5, name: "Pour Over", price: 250, rating: 4.8, category: "premium", 
+                  image: "https://images.unsplash.com/photo-1518834103323-1606c8bcc536?w=400&h=300&fit=crop", 
+                  description: "Artisanal hand-poured coffee" },
+                
+                { id: 6, name: "Masala Chai", price: 120, rating: 4.9, category: "hot", 
+                  image: "https://images.unsplash.com/photo-1561336313-0bd5e0b27ec8?w=400&h=300&fit=crop", 
+                  description: "Traditional Indian spiced tea" },
+                
+                { id: 7, name: "Filter Coffee", price: 100, rating: 4.9, category: "hot", 
+                  image: "https://images.unsplash.com/photo-1587734195507-6b5f6b2d0c60?w=400&h=300&fit=crop", 
+                  description: "South Indian traditional filter coffee" },
+                
+                { id: 8, name: "Mocha", price: 220, rating: 4.6, category: "hot", 
+                  image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop", 
+                  description: "Chocolate infused espresso delight" }
+            ];
+
+            // Filter coffees based on current ref values
+            const getFilteredCoffees = () => {
+                let result = [...coffees];
+                
+                if (categoryFilterRef.current !== 'all') {
+                    result = result.filter(coffee => coffee.category === categoryFilterRef.current);
+                }
+                
+                if (searchTermRef.current) {
+                    const term = searchTermRef.current.toLowerCase();
+                    result = result.filter(coffee => 
+                        coffee.name.toLowerCase().includes(term) ||
+                        coffee.description.toLowerCase().includes(term)
+                    );
+                }
+                
+                if (sortByRef.current === 'price-asc') {
+                    result.sort((a, b) => a.price - b.price);
+                } else if (sortByRef.current === 'price-desc') {
+                    result.sort((a, b) => b.price - a.price);
+                } else if (sortByRef.current === 'rating') {
+                    result.sort((a, b) => b.rating - a.rating);
+                }
+                
+                return result;
+            };
+
+            // Initialize cart from localStorage
+            useEffect(() => {
+                const savedCart = localStorage.getItem('coffeeCart');
+                if (savedCart) {
+                    setCart(JSON.parse(savedCart));
+                }
+            }, []);
+
+            // Save cart to localStorage
+            useEffect(() => {
+                localStorage.setItem('coffeeCart', JSON.stringify(cart));
+            }, [cart]);
+
+            // Cart Functions
+            const addToCart = (coffee) => {
+                setCart(prev => {
+                    const existing = prev.find(item => item.id === coffee.id);
+                    if (existing) {
+                        return prev.map(item => 
+                            item.id === coffee.id 
+                                ? { ...item, quantity: item.quantity + 1 }
+                                : item
+                        );
+                    } else {
+                        return [...prev, { ...coffee, quantity: 1 }];
+                    }
+                });
+            };
+
+            const removeFromCart = (id) => {
+                setCart(prev => prev.filter(item => item.id !== id));
+            };
+
+            const updateQuantity = (id, quantity) => {
+                if (quantity < 1) {
+                    removeFromCart(id);
+                    return;
+                }
+                setCart(prev => 
+                    prev.map(item => 
+                        item.id === id ? { ...item, quantity } : item
+                    )
+                );
+            };
+
+            const getCartTotal = () => {
+                const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                const gst = subtotal * 0.18;
+                const serviceCharge = subtotal * 0.05;
+                const total = subtotal + gst + serviceCharge;
+                
+                return {
+                    subtotal: formatPrice(subtotal),
+                    gst: formatPrice(gst),
+                    service: formatPrice(serviceCharge),
+                    total: formatPrice(total)
+                };
+            };
+
+            // Booking Functions
+            const handleBookingSubmit = (e) => {
+                e.preventDefault();
+                const bookingId = 'BK' + Date.now().toString().slice(-6);
+                alert(`Table booked successfully! Booking ID: ${bookingId}`);
+                
+                // Reset form
+                bookingFormRef.current = {
+                    date: '',
+                    time: '',
+                    people: 2,
+                    name: '',
+                    email: '',
+                    phone: ''
+                };
+                
+                // Reset form inputs manually
+                if (currentPage === 'book') {
+                    document.getElementById('booking-name').value = '';
+                    document.getElementById('booking-email').value = '';
+                    document.getElementById('booking-phone').value = '';
+                    document.getElementById('booking-date').value = '';
+                    document.getElementById('booking-time').value = '';
+                    document.getElementById('booking-people').textContent = '2';
+                }
+            };
+
+            // Navigation Component
+            const Navigation = () => (
+                <nav className="fixed top-0 left-0 right-0 z-40 bg-coffee-dark/95 border-b border-coffee-brown">
+                    <div className="max-w-7xl mx-auto px-4">
+                        <div className="flex justify-between items-center h-16">
+                            <button 
+                                onClick={() => setCurrentPage('home')}
+                                className="flex items-center space-x-2"
+                            >
+                                <span className="text-3xl">☕</span>
+                                <span className="text-2xl font-bold text-coffee-cream font-serif">
+                                    ITS COFFEE TIME
+                                </span>
+                            </button>
+                            
+                            <div className="hidden md:flex items-center space-x-4">
+                                {['home', 'menu', 'book', 'contact'].map((page) => (
+                                    <button
+                                        key={page}
+                                        onClick={() => setCurrentPage(page)}
+                                        className={`px-4 py-2 rounded-lg ${
+                                            currentPage === page
+                                                ? 'bg-coffee-gold text-coffee-dark'
+                                                : 'text-coffee-light hover:text-coffee-cream'
+                                        }`}
+                                    >
+                                        {page.charAt(0).toUpperCase() + page.slice(1)}
+                                    </button>
+                                ))}
+                                <button
+                                    onClick={() => setCurrentPage('checkout')}
+                                    className="px-4 py-2 bg-coffee-brown text-coffee-cream rounded-lg hover:bg-coffee-gold hover:text-coffee-dark"
+                                >
+                                    Cart ({cart.length})
+                                </button>
+                            </div>
+                            
+                            <button 
+                                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                                className="md:hidden text-coffee-cream text-2xl p-2"
+                            >
+                                {showMobileMenu ? '✕' : '☰'}
+                            </button>
+                        </div>
+                        
+                        {showMobileMenu && (
+                            <div className="md:hidden bg-coffee-darker rounded-lg mt-2 mb-4 p-4">
+                                {['home', 'menu', 'book', 'checkout', 'contact'].map((page) => (
+                                    <button
+                                        key={page}
+                                        onClick={() => { setCurrentPage(page); setShowMobileMenu(false); }}
+                                        className={`block w-full text-left px-4 py-3 rounded-lg mb-2 ${
+                                            currentPage === page
+                                                ? 'bg-coffee-gold text-coffee-dark'
+                                                : 'text-coffee-light hover:text-coffee-cream'
+                                        }`}
+                                    >
+                                        {page === 'checkout' ? `Cart (${cart.length})` : 
+                                         page.charAt(0).toUpperCase() + page.slice(1)}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </nav>
+            );
+
+            // Home Page
+            const HomePage = () => (
+                <div className="relative min-h-screen flex items-center justify-center px-4">
+                    <div className="absolute inset-0 bg-gradient-to-br from-coffee-dark via-coffee-brown to-coffee-darker"></div>
+                    
+                    <div className="relative z-10 max-w-6xl mx-auto text-center">
+                        <h1 className="text-5xl md:text-7xl font-bold text-coffee-cream font-serif mb-6">
+                            ITS COFFEE <span className="text-coffee-gold">TIME</span>
+                        </h1>
+                        <p className="text-xl md:text-2xl text-coffee-light mb-8 max-w-3xl mx-auto">
+                            Experience premium coffee & chai in every cup. Artisanal blends and unforgettable moments.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <button 
+                                onClick={() => setCurrentPage('menu')}
+                                className="px-8 py-4 bg-coffee-gold text-coffee-dark font-bold rounded-full text-lg"
+                            >
+                                Explore Menu
+                            </button>
+                            <button 
+                                onClick={() => setCurrentPage('book')}
+                                className="px-8 py-4 border-2 border-coffee-gold text-coffee-gold font-bold rounded-full text-lg"
+                            >
+                                Book a Table
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div className="absolute right-4 bottom-4 md:right-10 md:bottom-10 text-6xl">
+                        ☕
+                    </div>
+                </div>
+            );
+
+            // Menu Page - FIXED: No re-renders on typing
+            const MenuPage = () => {
+                const [filteredCoffees, setFilteredCoffees] = useState(coffees);
+                
+                // Handle search without re-rendering the whole page
+                const handleSearchChange = (e) => {
+                    searchTermRef.current = e.target.value;
+                    setFilteredCoffees(getFilteredCoffees());
+                };
+                
+                const handleSortChange = (e) => {
+                    sortByRef.current = e.target.value;
+                    setFilteredCoffees(getFilteredCoffees());
+                };
+                
+                const handleCategoryChange = (e) => {
+                    categoryFilterRef.current = e.target.value;
+                    setFilteredCoffees(getFilteredCoffees());
+                };
+
+                return (
+                    <div className="min-h-screen bg-coffee-dark py-12 px-4">
+                        <div className="max-w-7xl mx-auto">
+                            <h1 className="text-5xl font-bold text-center text-coffee-cream font-serif mb-12">
+                                Our Coffee & Chai Selection
+                            </h1>
+                            
+                            {/* Search and Filters */}
+                            <div className="flex flex-col md:flex-row gap-4 mb-8">
+                                <div className="flex-1">
+                                    <input
+                                        type="text"
+                                        placeholder="Search coffee or chai..."
+                                        className="w-full p-4 bg-coffee-darker text-coffee-cream rounded-xl border border-coffee-brown"
+                                        onChange={handleSearchChange}
+                                        defaultValue={searchTermRef.current}
+                                    />
+                                </div>
+                                <div className="flex gap-4">
+                                    <select 
+                                        className="p-4 bg-coffee-darker text-coffee-cream rounded-xl border border-coffee-brown"
+                                        onChange={handleSortChange}
+                                        defaultValue={sortByRef.current}
+                                    >
+                                        <option value="default">Sort By</option>
+                                        <option value="price-asc">Price: Low to High</option>
+                                        <option value="price-desc">Price: High to Low</option>
+                                        <option value="rating">Top Rated</option>
+                                    </select>
+                                    <select 
+                                        className="p-4 bg-coffee-darker text-coffee-cream rounded-xl border border-coffee-brown"
+                                        onChange={handleCategoryChange}
+                                        defaultValue={categoryFilterRef.current}
+                                    >
+                                        <option value="all">All Categories</option>
+                                        <option value="hot">🔥 Hot Drinks</option>
+                                        <option value="cold">🧊 Cold Drinks</option>
+                                        <option value="premium">⭐ Premium</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            {/* Coffee Grid */}
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {filteredCoffees.map(coffee => (
+                                    <div 
+                                        key={coffee.id} 
+                                        className="bg-coffee-darker rounded-2xl overflow-hidden"
+                                    >
+                                        <div className="h-48 overflow-hidden">
+                                            <img 
+                                                src={coffee.image} 
+                                                alt={coffee.name}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                        <div className="p-5">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <h3 className="text-xl font-bold text-coffee-cream">{coffee.name}</h3>
+                                                <span className="text-coffee-gold font-bold text-xl">
+                                                    {formatPrice(coffee.price)}
+                                                </span>
+                                            </div>
+                                            <p className="text-coffee-light mb-4">{coffee.description}</p>
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-yellow-400">★</span>
+                                                    <span className="text-coffee-cream">{coffee.rating}</span>
+                                                    <span className="ml-2 px-2 py-1 bg-coffee-brown text-coffee-cream rounded-full text-xs">
+                                                        {coffee.category}
+                                                    </span>
+                                                </div>
+                                                <button 
+                                                    onClick={() => addToCart(coffee)}
+                                                    className="px-5 py-2 bg-coffee-gold text-coffee-dark font-bold rounded-full"
+                                                >
+                                                    Add to Cart
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Book Page - FIXED: Uses direct DOM manipulation
+            const BookPage = () => {
+                // Handle input changes without React state
+                const handleInputChange = (field, e) => {
+                    bookingFormRef.current[field] = e.target.value;
+                };
+                
+                const handlePeopleChange = (change) => {
+                    const peopleElement = document.getElementById('booking-people');
+                    const newValue = Math.max(1, Math.min(10, parseInt(peopleElement.textContent) + change));
+                    peopleElement.textContent = newValue;
+                    bookingFormRef.current.people = newValue;
+                };
+
+                return (
+                    <div className="min-h-screen bg-coffee-dark py-12 px-4">
+                        <div className="max-w-6xl mx-auto">
+                            <h1 className="text-5xl font-bold text-center text-coffee-cream font-serif mb-12">
+                                Reserve Your Table
+                            </h1>
+                            
+                            <div className="grid lg:grid-cols-2 gap-12">
+                                <div className="bg-coffee-darker rounded-2xl p-8">
+                                    <h2 className="text-2xl font-bold text-coffee-cream mb-6">Book Now</h2>
+                                    <form onSubmit={handleBookingSubmit}>
+                                        <div className="space-y-6">
+                                            <div>
+                                                <label className="block text-coffee-cream mb-2">Full Name *</label>
+                                                <input
+                                                    id="booking-name"
+                                                    type="text"
+                                                    required
+                                                    className="w-full p-4 bg-coffee-dark text-coffee-cream rounded-xl border border-coffee-brown"
+                                                    onChange={(e) => handleInputChange('name', e)}
+                                                    defaultValue={bookingFormRef.current.name}
+                                                />
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-coffee-cream mb-2">Email *</label>
+                                                <input
+                                                    id="booking-email"
+                                                    type="email"
+                                                    required
+                                                    className="w-full p-4 bg-coffee-dark text-coffee-cream rounded-xl border border-coffee-brown"
+                                                    onChange={(e) => handleInputChange('email', e)}
+                                                    defaultValue={bookingFormRef.current.email}
+                                                />
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-coffee-cream mb-2">Phone Number *</label>
+                                                <input
+                                                    id="booking-phone"
+                                                    type="tel"
+                                                    required
+                                                    className="w-full p-4 bg-coffee-dark text-coffee-cream rounded-xl border border-coffee-brown"
+                                                    onChange={(e) => handleInputChange('phone', e)}
+                                                    defaultValue={bookingFormRef.current.phone}
+                                                />
+                                            </div>
+                                            
+                                            <div className="grid md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="block text-coffee-cream mb-2">Date *</label>
+                                                    <input
+                                                        id="booking-date"
+                                                        type="date"
+                                                        required
+                                                        className="w-full p-4 bg-coffee-dark text-coffee-cream rounded-xl border border-coffee-brown"
+                                                        onChange={(e) => handleInputChange('date', e)}
+                                                        defaultValue={bookingFormRef.current.date}
+                                                    />
+                                                </div>
+                                                
+                                                <div>
+                                                    <label className="block text-coffee-cream mb-2">Time *</label>
+                                                    <select
+                                                        id="booking-time"
+                                                        required
+                                                        className="w-full p-4 bg-coffee-dark text-coffee-cream rounded-xl border border-coffee-brown"
+                                                        onChange={(e) => handleInputChange('time', e)}
+                                                        defaultValue={bookingFormRef.current.time}
+                                                    >
+                                                        <option value="">Select Time</option>
+                                                        <option value="08:00">8:00 AM</option>
+                                                        <option value="09:00">9:00 AM</option>
+                                                        <option value="10:00">10:00 AM</option>
+                                                        <option value="11:00">11:00 AM</option>
+                                                        <option value="12:00">12:00 PM</option>
+                                                        <option value="13:00">1:00 PM</option>
+                                                        <option value="14:00">2:00 PM</option>
+                                                        <option value="15:00">3:00 PM</option>
+                                                        <option value="16:00">4:00 PM</option>
+                                                        <option value="17:00">5:00 PM</option>
+                                                        <option value="18:00">6:00 PM</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-coffee-cream mb-2">Number of Guests *</label>
+                                                <div className="flex items-center gap-4">
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => handlePeopleChange(-1)}
+                                                        className="w-12 h-12 bg-coffee-dark text-coffee-cream rounded-xl border border-coffee-brown"
+                                                    >
+                                                        −
+                                                    </button>
+                                                    <span id="booking-people" className="text-3xl font-bold text-coffee-gold">
+                                                        {bookingFormRef.current.people}
+                                                    </span>
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => handlePeopleChange(1)}
+                                                        className="w-12 h-12 bg-coffee-dark text-coffee-cream rounded-xl border border-coffee-brown"
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <button 
+                                                type="submit"
+                                                className="w-full py-4 bg-coffee-gold text-coffee-dark font-bold text-xl rounded-xl mt-6"
+                                            >
+                                                Confirm Reservation
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <div className="space-y-8">
+                                    <div className="bg-coffee-darker rounded-2xl p-8">
+                                        <h3 className="text-2xl font-bold text-coffee-cream mb-6">Your Booking Summary</h3>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between">
+                                                <span className="text-coffee-light">Date:</span>
+                                                <span className="text-coffee-cream" id="summary-date">
+                                                    {bookingFormRef.current.date || 'Select a date'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-coffee-light">Time:</span>
+                                                <span className="text-coffee-cream" id="summary-time">
+                                                    {bookingFormRef.current.time || 'Select time'}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-coffee-light">Guests:</span>
+                                                <span className="text-coffee-cream" id="summary-people">
+                                                    {bookingFormRef.current.people} people
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Checkout Page
+            const CheckoutPage = () => {
+                const totals = getCartTotal();
+                
+                return (
+                    <div className="min-h-screen bg-coffee-dark py-12 px-4">
+                        <div className="max-w-7xl mx-auto">
+                            <h1 className="text-5xl font-bold text-center text-coffee-cream font-serif mb-12">
+                                Your Order
+                            </h1>
+                            
+                            {orderConfirmed ? (
+                                <div className="text-center bg-coffee-darker rounded-2xl p-12 max-w-2xl mx-auto">
+                                    <div className="text-8xl mb-6">☕🎉</div>
+                                    <h2 className="text-4xl font-bold text-coffee-cream mb-4">Order Confirmed!</h2>
+                                    <p className="text-coffee-light text-xl mb-8">
+                                        Your order is being prepared. Estimated pickup: 15 minutes.
+                                    </p>
+                                    <div className="mb-8">
+                                        <div className="text-coffee-light mb-2">Order Total</div>
+                                        <div className="text-3xl font-bold text-coffee-gold">{totals.total}</div>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            setOrderConfirmed(false);
+                                            setCurrentPage('home');
+                                            setCart([]);
+                                        }}
+                                        className="px-8 py-4 bg-coffee-gold text-coffee-dark font-bold rounded-full text-lg"
+                                    >
+                                        Start New Order
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="grid lg:grid-cols-3 gap-8">
+                                    <div className="lg:col-span-2">
+                                        <div className="bg-coffee-darker rounded-2xl p-6 mb-6">
+                                            <h2 className="text-2xl font-bold text-coffee-cream mb-6">Your Cart ({cart.length})</h2>
+                                            {cart.length === 0 ? (
+                                                <div className="text-center py-12">
+                                                    <div className="text-6xl mb-4">🛒</div>
+                                                    <p className="text-2xl text-coffee-light mb-6">Your cart is empty</p>
+                                                    <button 
+                                                        onClick={() => setCurrentPage('menu')}
+                                                        className="px-6 py-3 bg-coffee-gold text-coffee-dark font-bold rounded-full"
+                                                    >
+                                                        Browse Menu
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    {cart.map(item => (
+                                                        <div key={item.id} className="bg-coffee-dark rounded-xl p-4 flex items-center">
+                                                            <img 
+                                                                src={item.image} 
+                                                                alt={item.name} 
+                                                                className="w-20 h-20 rounded-lg object-cover"
+                                                            />
+                                                            <div className="ml-4 flex-1">
+                                                                <h3 className="text-lg font-bold text-coffee-cream">{item.name}</h3>
+                                                                <div className="text-coffee-gold font-bold mt-1">
+                                                                    {formatPrice(item.price)} each
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center gap-6">
+                                                                <div className="flex items-center gap-3">
+                                                                    <button 
+                                                                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                                        className="w-8 h-8 bg-coffee-brown text-coffee-cream rounded-full"
+                                                                    >
+                                                                        −
+                                                                    </button>
+                                                                    <span className="text-xl font-bold text-coffee-cream w-8 text-center">
+                                                                        {item.quantity}
+                                                                    </span>
+                                                                    <button 
+                                                                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                                        className="w-8 h-8 bg-coffee-brown text-coffee-cream rounded-full"
+                                                                    >
+                                                                        +
+                                                                    </button>
+                                                                </div>
+                                                                <div className="text-right min-w-[100px]">
+                                                                    <div className="text-2xl font-bold text-coffee-gold">
+                                                                        {formatPrice(item.price * item.quantity)}
+                                                                    </div>
+                                                                    <button 
+                                                                        onClick={() => removeFromCart(item.id)}
+                                                                        className="text-sm text-coffee-light hover:text-red-400 mt-1"
+                                                                    >
+                                                                        Remove
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="lg:col-span-1">
+                                        <div className="bg-coffee-darker rounded-2xl p-8 sticky top-8">
+                                            <h2 className="text-2xl font-bold text-coffee-cream mb-6">Order Summary</h2>
+                                            <div className="space-y-4 mb-8">
+                                                <div className="flex justify-between">
+                                                    <span className="text-coffee-light">Subtotal</span>
+                                                    <span className="text-coffee-cream">{totals.subtotal}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-coffee-light">Service Charge (5%)</span>
+                                                    <span className="text-coffee-cream">{totals.service}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-coffee-light">GST (18%)</span>
+                                                    <span className="text-coffee-cream">{totals.gst}</span>
+                                                </div>
+                                                <div className="border-t border-coffee-brown pt-4 mt-4">
+                                                    <div className="flex justify-between text-xl font-bold">
+                                                        <span className="text-coffee-cream">Total Amount</span>
+                                                        <span className="text-coffee-gold">{totals.total}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {cart.length > 0 && (
+                                                <>
+                                                    <div className="mb-6">
+                                                        <label className="block text-coffee-cream mb-3">Payment Method</label>
+                                                        <select className="w-full p-4 bg-coffee-dark text-coffee-cream rounded-xl border border-coffee-brown">
+                                                            <option>💳 Credit/Debit Card</option>
+                                                            <option>📱 UPI (Google Pay, PhonePe)</option>
+                                                            <option>💰 Cash on Delivery</option>
+                                                            <option>🏦 Net Banking</option>
+                                                        </select>
+                                                    </div>
+                                                    
+                                                    <button 
+                                                        onClick={() => setOrderConfirmed(true)}
+                                                        className="w-full py-4 bg-coffee-gold text-coffee-dark font-bold text-xl rounded-xl mb-4"
+                                                    >
+                                                        Pay {totals.total}
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            };
+
+            // Contact Page
+            const ContactPage = () => (
+                <div className="min-h-screen bg-coffee-dark py-12 px-4">
+                    <div className="max-w-6xl mx-auto">
+                        <h1 className="text-5xl font-bold text-center text-coffee-cream font-serif mb-12">
+                            Get in Touch
+                        </h1>
+                        
+                        <div className="grid lg:grid-cols-2 gap-12">
+                            <div className="space-y-8">
+                                <div className="bg-coffee-darker rounded-2xl p-8">
+                                    <h3 className="text-2xl font-bold text-coffee-gold mb-6">📍 Visit Us</h3>
+                                    <p className="text-coffee-cream text-lg">
+                                        123 Coffee Street<br />
+                                        Hyderabad, Telangana 500018<br />
+                                        India
+                                    </p>
+                                </div>
+                                
+                                <div className="bg-coffee-darker rounded-2xl p-8">
+                                    <h3 className="text-2xl font-bold text-coffee-gold mb-6">📞 Contact Info</h3>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-2xl">📞</span>
+                                            <div>
+                                                <div className="font-bold text-coffee-cream">Phone</div>
+                                                <div className="text-coffee-light">+91 99595 29675</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-2xl">✉️</span>
+                                            <div>
+                                                <div className="font-bold text-coffee-cream">Email</div>
+                                                <div className="text-coffee-light">hello@itscoffeetime.in</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-coffee-darker rounded-2xl p-8">
+                                <h3 className="text-2xl font-bold text-coffee-cream mb-6">Send us a Message</h3>
+                                <form className="space-y-6">
+                                    <div>
+                                        <label className="block text-coffee-cream mb-2">Name</label>
+                                        <input 
+                                            type="text" 
+                                            className="w-full p-4 bg-coffee-dark text-coffee-cream rounded-xl border border-coffee-brown"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-coffee-cream mb-2">Email</label>
+                                        <input 
+                                            type="email" 
+                                            className="w-full p-4 bg-coffee-dark text-coffee-cream rounded-xl border border-coffee-brown"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-coffee-cream mb-2">Message</label>
+                                        <textarea 
+                                            rows="5"
+                                            className="w-full p-4 bg-coffee-dark text-coffee-cream rounded-xl border border-coffee-brown"
+                                        ></textarea>
+                                    </div>
+                                    
+                                    <button 
+                                        type="submit"
+                                        className="w-full py-4 bg-coffee-gold text-coffee-dark font-bold text-xl rounded-xl"
+                                    >
+                                        Send Message
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // Footer
+            const Footer = () => (
+                <footer className="bg-coffee-darker py-8 px-4 border-t border-coffee-brown">
+                    <div className="max-w-6xl mx-auto text-center">
+                        <p className="text-coffee-light mb-4">
+                            © {new Date().getFullYear()} ITS COFFEE TIME. Pleasure To Serve You  .
+                        </p>
+                        <p className="text-coffee-gold">
+                            Made with ❤️ in India
+                        </p>
+                    </div>
+                </footer>
+            );
+
+            // =================== MAIN RENDER ===================
+            return (
+                <div className="min-h-screen bg-coffee-dark">
+                    <Navigation />
+                    
+                    <main className="pt-16">
+                        {currentPage === 'home' && <HomePage />}
+                        {currentPage === 'menu' && <MenuPage />}
+                        {currentPage === 'book' && <BookPage />}
+                        {currentPage === 'checkout' && <CheckoutPage />}
+                        {currentPage === 'contact' && <ContactPage />}
+                    </main>
+                    
+                    <Footer />
+                </div>
+            );
+        };
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
